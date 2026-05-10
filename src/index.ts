@@ -18,9 +18,11 @@ app.use((req, _res, next) => {
   next();
 });
 
+const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "");
+
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  "https://buildlens-fe.vercel.app/",
+  frontendUrl,
+  "https://buildlens-fe.vercel.app",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ].filter(Boolean) as string[];
