@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUILDER
+  BUYER
+}
+
+model User {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String   @unique
+  password            String
+  role                Role     @default(BUYER)
+  resetPasswordToken  String?
+  resetPasswordExpire DateTime?
+  createdAt           DateTime @default(now())
+  refreshTokens       RefreshToken[]
+  managedProperties   Property[] @relation("PropertyBuilder")
+  purchasedProperties Property[] @relation("PropertyBuyers")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model BlacklistedToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Property {
+  id                String           @id @default(cuid())
+  name              String
+  description       String?
+  location          String
+  type              String           // Residential, Villa, Commercial, Plot
+  totalUnits        Int
+  possessionDate    DateTime
+  coverImage        String?
+  reraNumber        String           @unique
+  builderId         String
+  builder           User             @relation("PropertyBuilder", fields: [builderId], references: [id])
+  buyers            User[]           @relation("PropertyBuyers")
+  updates           PropertyUpdate[]
+  announcements     Announcement[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+enum MilestoneStage {
+  FOUNDATION
+  STRUCTURE
+  BRICKWORK
+  PLUMBING
+  ELECTRICAL
+  PLASTERING
+  FLOORING
+  FINISHING
+  HANDOVER
+}
+
+enum UpdateStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model PropertyUpdate {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  date        DateTime?
+  stage       MilestoneStage @default(FOUNDATION)
+  status      UpdateStatus   @default(DRAFT)
+  propertyId  String
+  property    Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  photos      UpdatePhoto[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model UpdatePhoto {
+  id        String         @id @default(cuid())
+  url       String
+  publicId  String?
+  updateId  String
+  update    PropertyUpdate @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  isImportant Boolean  @default(false)
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
